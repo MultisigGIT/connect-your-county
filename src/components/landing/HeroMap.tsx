@@ -68,7 +68,7 @@ export function HeroMap({ className }: { className?: string }) {
       {EDGES.map(([a, b], i) => {
         const from = NODES[a]!;
         const to = NODES[b]!;
-
+        return (
           <line
             key={`e-${i}`}
             x1={from.x}
