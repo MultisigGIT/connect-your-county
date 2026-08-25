@@ -72,7 +72,7 @@ function Index() {
             <img
               src={logoAsset.url}
               alt="Plataforma I.D. GEOPerícias"
-              className="h-24 w-auto"
+              className="h-24 w-auto mix-blend-multiply"
               width={240}
               height={96}
             />
