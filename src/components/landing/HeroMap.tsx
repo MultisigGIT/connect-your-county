@@ -1,105 +1,160 @@
-const NODES: { x: number; y: number; r: number; tone: "green" | "gold" | "blue" }[] = [
-  { x: 118, y: 150, r: 7, tone: "green" },
-  { x: 175, y: 112, r: 5, tone: "green" },
-  { x: 240, y: 96, r: 8, tone: "green" },
-  { x: 305, y: 108, r: 5, tone: "green" },
-  { x: 362, y: 126, r: 7, tone: "blue" },
-  { x: 400, y: 190, r: 6, tone: "blue" },
-  { x: 392, y: 258, r: 8, tone: "blue" },
-  { x: 352, y: 320, r: 5, tone: "blue" },
-  { x: 320, y: 392, r: 7, tone: "blue" },
-  { x: 268, y: 442, r: 6, tone: "gold" },
-  { x: 212, y: 418, r: 8, tone: "gold" },
-  { x: 168, y: 356, r: 5, tone: "gold" },
-  { x: 122, y: 300, r: 7, tone: "gold" },
-  { x: 96, y: 224, r: 6, tone: "gold" },
-  { x: 196, y: 208, r: 5, tone: "green" },
-  { x: 300, y: 264, r: 5, tone: "blue" },
+import { useEffect, useState } from "react";
+import logoAsset from "@/assets/logo.png.asset.json";
+
+type Pt = { x: number; y: number };
+
+/** Contorno aproximado do Brasil (viewBox 500x540). */
+const BRAZIL_OUTLINE: Pt[] = [
+  { x: 150, y: 118 },
+  { x: 196, y: 92 },
+  { x: 240, y: 108 },
+  { x: 286, y: 86 },
+  { x: 322, y: 110 },
+  { x: 366, y: 104 },
+  { x: 398, y: 138 },
+  { x: 414, y: 182 },
+  { x: 402, y: 224 },
+  { x: 424, y: 266 },
+  { x: 408, y: 312 },
+  { x: 378, y: 352 },
+  { x: 352, y: 402 },
+  { x: 320, y: 448 },
+  { x: 282, y: 474 },
+  { x: 244, y: 466 },
+  { x: 212, y: 436 },
+  { x: 180, y: 412 },
+  { x: 152, y: 372 },
+  { x: 126, y: 322 },
+  { x: 100, y: 268 },
+  { x: 90, y: 212 },
+  { x: 112, y: 162 },
 ];
 
-const EDGES: [number, number][] = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [4, 5],
-  [5, 6],
-  [6, 7],
-  [7, 8],
-  [8, 9],
-  [9, 10],
-  [10, 11],
-  [11, 12],
-  [12, 13],
-  [13, 0],
-  [1, 14],
-  [14, 2],
-  [14, 15],
-  [15, 6],
-  [15, 10],
-  [12, 14],
-];
+/** Pin da logo: arco superior + "V" inferior. */
+function pinShape(count: number): Pt[] {
+  const cx = 250;
+  const cy = 205;
+  const r = 118;
+  const arcCount = Math.round(count * 0.62);
+  const legCount = count - arcCount;
+  const pts: Pt[] = [];
 
-const TONE: Record<string, string> = {
-  green: "var(--brand-green)",
-  gold: "var(--brand-gold)",
-  blue: "var(--brand-blue)",
-};
+  // arco: de 160° até 20° (topo do pin), sentido horário passando pelo topo
+  for (let i = 0; i < arcCount; i++) {
+    const t = i / (arcCount - 1);
+    const angle = Math.PI * (1.05 - t * 1.85); // ~189° -> ~-144°
+    pts.push({ x: cx + Math.cos(angle) * r, y: cy - Math.sin(angle) * r });
+  }
 
-const BRAZIL =
-  "M 95 140 L 140 95 L 190 105 L 225 78 L 262 95 L 300 78 L 330 100 L 372 96 L 400 120 L 420 165 L 405 205 L 430 250 L 420 300 L 385 340 L 360 400 L 330 445 L 300 470 L 258 470 L 225 440 L 195 430 L 165 395 L 130 360 L 105 300 L 78 250 L 70 195 Z";
+  // pernas do V até a ponta
+  const tip = { x: cx, y: 470 };
+  const right = pts[pts.length - 1]!;
+  const left = pts[0]!;
+  const half = Math.ceil(legCount / 2);
+  for (let i = 1; i <= half; i++) {
+    const t = i / (half + 1);
+    pts.push({ x: right.x + (tip.x - right.x) * t, y: right.y + (tip.y - right.y) * t });
+  }
+  for (let i = legCount - half; i >= 1; i--) {
+    const t = i / (legCount - half + 1);
+    pts.unshift({ x: left.x + (tip.x - left.x) * t, y: left.y + (tip.y - left.y) * t });
+  }
+  return pts;
+}
+
+const COUNT = BRAZIL_OUTLINE.length;
+const PIN = pinShape(COUNT);
+
+const TONES = ["var(--brand-green)", "var(--brand-gold)", "var(--brand-blue)"];
+
+function toneFor(i: number) {
+  const t = i / COUNT;
+  if (t < 0.34) return TONES[1]!; // dourado à esquerda
+  if (t < 0.7) return TONES[0]!; // verde no topo
+  return TONES[2]!; // azul à direita/baixo
+}
+
+function toPath(pts: Pt[]) {
+  return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z";
+}
 
 export function HeroMap({ className }: { className?: string }) {
+  const [isMap, setIsMap] = useState(false);
+
+  useEffect(() => {
+    const first = window.setTimeout(() => setIsMap(true), 900);
+    const loop = window.setInterval(() => setIsMap((v) => !v), 5200);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(loop);
+    };
+  }, []);
+
+  const pts = isMap ? BRAZIL_OUTLINE : PIN;
+
   return (
-    <svg
-      viewBox="0 0 500 540"
-      className={className}
-      role="img"
-      aria-label="Mapa do Brasil com rede de municípios conectados à plataforma I.D."
-    >
-      <path
-        d={BRAZIL}
-        fill="var(--color-secondary)"
-        stroke="var(--color-border)"
-        strokeWidth="2"
-        opacity="0.9"
+    <div className={`relative ${className ?? ""}`}>
+      <svg
+        viewBox="0 0 500 540"
+        className="w-full"
+        role="img"
+        aria-label="Pontos que se reorganizam entre o pin da Plataforma I.D. e o mapa do Brasil"
+      >
+        <path
+          d={toPath(pts)}
+          fill="var(--color-secondary)"
+          fillOpacity="0.7"
+          stroke="var(--color-border)"
+          strokeWidth="1.5"
+          style={{ transition: "d 2.2s cubic-bezier(0.65, 0, 0.35, 1)" }}
+        />
+
+        {pts.map((p, i) => {
+          const next = pts[(i + 1) % pts.length]!;
+          return (
+            <line
+              key={`l-${i}`}
+              x1={p.x}
+              y1={p.y}
+              x2={next.x}
+              y2={next.y}
+              stroke={toneFor(i)}
+              strokeWidth="1.6"
+              strokeOpacity="0.5"
+              style={{
+                transition: `all 2.2s cubic-bezier(0.65, 0, 0.35, 1) ${i * 35}ms`,
+              }}
+            />
+          );
+        })}
+
+        {pts.map((p, i) => (
+          <g key={`n-${i}`}>
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={i % 3 === 0 ? 13 : 9}
+              fill={toneFor(i)}
+              opacity="0.16"
+              style={{ transition: `all 2.2s cubic-bezier(0.65, 0, 0.35, 1) ${i * 35}ms` }}
+            />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={i % 3 === 0 ? 7 : 4.5}
+              fill={toneFor(i)}
+              style={{ transition: `all 2.2s cubic-bezier(0.65, 0, 0.35, 1) ${i * 35}ms` }}
+            />
+          </g>
+        ))}
+      </svg>
+
+      <img
+        src={logoAsset.url}
+        alt="Plataforma I.D. GEOPerícias"
+        className="pointer-events-none absolute top-1/2 left-1/2 w-[38%] -translate-x-1/2 -translate-y-[58%] mix-blend-multiply transition-opacity duration-1000"
+        style={{ opacity: isMap ? 0.25 : 1 }}
       />
-
-      {EDGES.map(([a, b], i) => {
-        const from = NODES[a]!;
-        const to = NODES[b]!;
-        return (
-          <line
-            key={`e-${i}`}
-            x1={from.x}
-            y1={from.y}
-            x2={to.x}
-            y2={to.y}
-            stroke={TONE[from.tone]}
-            strokeWidth="1.6"
-            strokeOpacity="0.55"
-            style={{
-              animation: `id-node-in 500ms ease-out ${200 + i * 90}ms both`,
-            }}
-          />
-        );
-      })}
-
-      {NODES.map((n, i) => (
-        <g key={`n-${i}`} style={{ animation: `id-node-in 450ms ease-out ${i * 110}ms both` }}>
-          <circle cx={n.x} cy={n.y} r={n.r + 6} fill={TONE[n.tone]} opacity="0.14" />
-          <circle
-            cx={n.x}
-            cy={n.y}
-            r={n.r}
-            fill={TONE[n.tone]}
-            style={{
-              animation: `id-pulse-soft 3.2s ease-in-out ${i * 180}ms infinite`,
-              transformOrigin: `${n.x}px ${n.y}px`,
-            }}
-          />
-        </g>
-      ))}
-    </svg>
+    </div>
   );
 }
