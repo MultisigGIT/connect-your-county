@@ -119,7 +119,7 @@ export function Diagnostico({ contactHref }: { contactHref: string }) {
       </div>
 
       {!done && current ? (
-        <div key={current.id} className="animate-fade-in">
+        <div key={current.id} className="animate-in fade-in duration-500">
           <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
             Pergunta {step + 1} de {total}
           </p>
@@ -142,7 +142,7 @@ export function Diagnostico({ contactHref }: { contactHref: string }) {
           </div>
         </div>
       ) : (
-        <div className="animate-fade-in text-center">
+        <div className="animate-in fade-in text-center duration-500">
           <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
             Placar de prontidão
           </p>
