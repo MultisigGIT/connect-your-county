@@ -77,23 +77,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Plataforma I.D. GEOPerícias" },
+      {
+        name: "description",
+        content: "Integração de dados do SINTER para municípios, sem virar uma equipe de TI.",
+      },
+      { name: "author", content: "Plataforma I.D. GEOPerícias" },
+      { property: "og:title", content: "Plataforma I.D. GEOPerícias" },
+      {
+        property: "og:description",
+        content: "Integração de dados do SINTER para municípios, sem virar uma equipe de TI.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
     ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
